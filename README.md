@@ -1,64 +1,154 @@
-# MPCA_Mini_project-
-Smart Dustbin — Automated Waste Management System
-Overview
-An IoT-based smart dustbin built on Arduino Uno that automates lid control using proximity detection, monitors waste fill level using infrared sensing, measures garbage weight using a Force Sensitive Resistor, and displays real-time status on an LCD screen. Designed to minimize human contact with waste bins, improving hygiene in public and household environments.
+# Smart Dustbin - Arduino Project
 
-Tech Stack
+Automated waste bin with hand proximity detection, lid control, fill-level monitoring, and weight sensing.
 
-Microcontroller: Arduino Uno (ATmega328P, 16MHz, 32KB Flash)
-IDE: Arduino IDE 2.3.8
-Language: C++ (Arduino framework)
-Communication Protocol: I2C (LCD), Digital I/O (sensors), PWM (servo)
+## Components
 
+| Component | Model | Pins |
+|-----------|-------|------|
+| Microcontroller | Arduino Uno | - |
+| Ultrasonic Sensor | HC-SR04 | Trig: 9, Echo: 10 |
+| IR Sensor | Generic IR Module | Digital: 7 |
+| Force Sensor | FSR402 | Analog: A0 |
+| Servo Motor | SG90 | Digital: 6 |
+| LCD Display | 16x2 I2C | SDA: A4, SCL: A5 |
 
-Hardware Components
-ComponentModelPurposeMicrocontrollerArduino UnoCentral processing unitProximity SensorHC-SR04Hand detection via ultrasonic wavesFill SensorIR SensorDetects if bin is fullWeight SensorFSR (Force Sensitive Resistor)Measures garbage weight via analog voltageDisplay16x2 LCD (I2C)Real-time status outputActuatorSG90 Servo MotorMechanical lid control
+## Wiring Table
 
-System Architecture
-HC-SR04 ──────────────────────────────────┐
-IR Sensor ────────────────────────────────┤
-FSR Sensor (A0) ──────────────────────────┤──→ Arduino Uno ──→ Servo Motor (lid)
-LCD (I2C - SDA/SCL) ←─────────────────────┘
+### HC-SR04 Ultrasonic Sensor
+| Pin | Arduino Pin |
+|-----|-------------|
+| VCC | 5V |
+| GND | GND |
+| Trig | Pin 9 |
+| Echo | Pin 10 |
 
-Working Principle
-Proximity Detection (HC-SR04)
-The sensor emits a 10 microsecond ultrasonic pulse at 40kHz via the TRIG pin. The pulse travels through air, bounces off the nearest object, and returns to the ECHO pin. The time-of-flight is captured using pulseIn() and converted to distance using:
-distance (cm) = duration × 0.034 / 2
-If distance < 20cm, lid open sequence is triggered.
-Lid Control (Servo Motor)
-The SG90 servo operates on PWM signal. lidServo.write(90) rotates the horn 90 degrees, physically lifting the lid. After a 3 second delay, lidServo.write(0) returns it to closed position.
-Fill Level Detection (IR Sensor)
-The IR sensor emits infrared light inside the bin. If the bin is full, the garbage reflects the IR signal back to the receiver. The digital output goes LOW when the bin is full, HIGH when empty.
-Weight Measurement (FSR)
-The FSR is connected in a voltage divider circuit on pin A0. As weight increases, resistance decreases, increasing the analog voltage reading (0-1023). This value is mapped to a weight range and displayed on the LCD.
-Display (16x2 LCD via I2C)
-Uses the LiquidCrystal_I2C library. Displays two lines — fill status (Full/Not Full) and weight reading — updating every loop cycle.
+### IR Sensor Module
+| Pin | Arduino Pin |
+|-----|-------------|
+| VCC | 5V |
+| GND | GND |
+| OUT | Pin 7 |
 
-Pin Configuration
-PinComponentModeD9HC-SR04 TRIGOUTPUTD10HC-SR04 ECHOINPUTD6Servo SignalPWM OUTPUTD7IR Sensor OUTINPUTA0FSRANALOG INPUTSDA/SCLLCD I2CI2C
+### FSR402 Force Sensor
+| Wire | Arduino Pin |
+|------|-------------|
+| Red (+) | A0 via 10kΩ pull-down to GND |
+| Black (-) | GND |
 
-Flow
+**Note:** Use a 10kΩ resistor between A0 and GND for voltage division.
 
-Arduino powers on → servo initializes to 0° (closed)
-Loop starts → ultrasonic reads distance every 200ms
-Distance < 20cm → servo opens lid to 90°
-FSR reads analog weight → mapped to grams
-IR checks fill level → digital HIGH/LOW
-LCD updates with weight and fill status
-3 second delay → servo closes lid
-Loop repeats
+### SG90 Servo Motor
+| Wire | Arduino Pin |
+|------|-------------|
+| Red (VCC) | 5V |
+| Brown (GND) | GND |
+| Orange (Signal) | Pin 6 |
 
+**Note:** If powered separately, connect GND to Arduino GND.
 
-Libraries Used
+### 16x2 I2C LCD
+| Pin | Arduino Pin |
+|-----|-------------|
+| VCC | 5V |
+| GND | GND |
+| SDA | A4 |
+| SCL | A5 |
 
-Servo.h — built-in Arduino servo control
-Wire.h — I2C communication
-LiquidCrystal_I2C.h — LCD control over I2C
+## Libraries Required
 
+Install via Arduino Library Manager (`Sketch > Include Library > Manage Libraries`):
 
-Future Improvements
+| Library | Author | Purpose |
+|---------|--------|---------|
+| LiquidCrystal_I2C | Frank de Brabander | I2C LCD control |
 
-GSM module to send SMS alert when bin is full
-Data logging to SD card
-Solar powered operation
-Multiple bin monitoring via central dashboard
+Built-in libraries (no installation needed):
+- Servo.h
+- Wire.h
+
+## Behavior
+
+### Proximity Detection
+- Ultrasonic sensor continuously measures distance
+- Hand detected within 10 cm triggers lid opening
+- 3-second no-hand timer starts after hand removal
+
+### Lid Control
+- Lid opens to 90° when hand detected
+- Lid closes to 0° after 3 seconds without detection
+- Smooth animation using servo stepping
+- Non-blocking (uses millis, not delay)
+
+### Fill Level Detection
+- IR sensor detects if bin is full (blocked = full)
+- LCD line 1 shows "BIN FULL!" when full
+
+### Weight Monitoring
+- FSR sensor measures weight on bin floor
+- Three levels: Low (<300), Medium (300-600), High (>600)
+- Displayed on LCD line 2
+
+### LCD Display States
+| State | Line 1 | Line 2 |
+|-------|--------|--------|
+| Ready | Ready | Weight |
+| Full | BIN FULL! | Weight |
+
+## File Structure
+
+```
+smart_dustbin/
+├── smart_dustbin.ino    # Main sketch (includes, setup, loop)
+├── ultrasonic.ino      # HC-SR04 distance function
+├── ir_sensor.ino        # IR bin-full detection
+├── fsr.ino              # FSR weight level function
+├── servo_control.ino    # Servo lid control
+├── lcd_display.ino      # LCD initialization and display
+└── README.md            # This file
+```
+
+## Installation
+
+1. **Install Library**
+   - Open Arduino IDE
+   - Go to `Sketch > Include Library > Manage Libraries`
+   - Search for "LiquidCrystal_I2C"
+   - Install "LiquidCrystal I2C" by Frank de Brabander
+
+2. **Upload Sketch**
+   - Open `smart_dustbin.ino` in Arduino IDE
+   - Select `Tools > Board > Arduino Uno`
+   - Select `Tools > Port > COMX` (or /dev/ttyACM0 on Linux)
+   - Click Upload (Ctrl+U)
+
+3. **Wire Components**
+   - Follow wiring table above
+   - Ensure all GND pins are common
+   - Double-check I2C address (0x27 default)
+
+## Troubleshooting
+
+### LCD not displaying
+- Check I2C address with I2C Scanner sketch
+- Verify SDA/A4 and SCL/A5 connections
+- Ensure library is installed correctly
+
+### Servo not moving
+- Verify 5V power supply can deliver enough current
+- Check signal pin connection (Pin 6)
+- Ensure servo.write() values are within range (0-180)
+
+### Ultrasonic reading 0
+- Check Trig/Echo pin connections
+- Ensure pins are set as OUTPUT/INPUT correctly
+- Verify power supply to sensor
+
+### IR sensor always shows full/empty
+- Adjust sensor position/distance from bin contents
+- Check digital pin connection (Pin 7)
+- Invert logic in `isBinFull()` if needed
+
+### Serial Monitor shows nothing
+- Set baud rate to 9600 in Serial Monitor
+- Check USB cable supports data (not power-only)
