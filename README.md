@@ -36,7 +36,6 @@ Automated waste bin with hand proximity detection, lid control, fill-level monit
 | Red (+) | A0 via 10kΩ pull-down to GND |
 | Black (-) | GND |
 
-**Note:** Use a 10kΩ resistor between A0 and GND for voltage division.
 
 ### SG90 Servo Motor
 | Wire | Arduino Pin |
