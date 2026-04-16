@@ -33,7 +33,7 @@ Automated waste bin with hand proximity detection, lid control, fill-level monit
 ### FSR402 Force Sensor
 | Wire | Arduino Pin |
 |------|-------------|
-| Red (+) | A0 via 10kΩ pull-down to GND |
+| Red (+) |
 | Black (-) | GND |
 
 
